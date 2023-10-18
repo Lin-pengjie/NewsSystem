@@ -33,7 +33,7 @@ export default function Role() {
   //删除按钮确认点击事件
   const delLimits = (obj) => {
     setdataSource(dataSource.filter(data => data.id !== obj.id))
-    axios.delete(`http://localhost:8000/roles/${obj.id}`)
+    axios.delete(`/roles/${obj.id}`)
   }
 
 
@@ -62,7 +62,7 @@ export default function Role() {
       }
       return item
     }))
-    axios.patch(`http://localhost:8000/roles/${rightsId}`,{rights:checkedKeys})
+    axios.patch(`/roles/${rightsId}`,{rights:checkedKeys})
   }
 
   const columns = [
@@ -86,10 +86,10 @@ export default function Role() {
   ]
 
   useEffect(() => {
-    axios.get('http://localhost:8000/roles').then(res => {
+    axios.get('/roles').then(res => {
       setdataSource(res.data)
     })
-    axios.get('http://localhost:8000/rights?_embed=children').then(res => {
+    axios.get('/rights?_embed=children').then(res => {
       setlimits(res.data)
     })
   }, [])
@@ -106,7 +106,6 @@ export default function Role() {
         //动画
         confirmLoading={confirmLoading}
         onCancel={handleCancel}
-        maskStyle={{ backgroundColor: 'rgba(20, 20, 20, 0.1)' /* 设置遮罩背景色为透明灰色 */ }}
       ></Modal>
 
       {/* 编辑Modal */}

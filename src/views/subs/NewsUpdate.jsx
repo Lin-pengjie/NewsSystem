@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import style from '../../assets/css/Compose.module.scss'
-import { Breadcrumb, Button, Form, Input, message, Select, Steps, notification } from 'antd';
+import { Button, Form, Input, message, Select, Steps, notification } from 'antd';
 import axios from 'axios';
 import ComposeEdit from '../../components/Compose-Edit/ComposeEdit'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { LeftOutlined } from '@ant-design/icons';
 
 // 步骤条内容
 const steps = [
@@ -21,15 +22,33 @@ const steps = [
   },
 ]
 
-export default function Compose() {
+export default function NewsUpdata() {
   const { Option } = Select
   const [current, setCurrent] = useState(0)
   const [categories, setcategories] = useState([])
   const [form] = Form.useForm();
   const [FormData, setFormData] = useState()
   const [Text, setText] = useState()
-  const User = JSON.parse(localStorage.getItem('token'))
+  //useParams()来获取URL中的参数
   const navigate = useNavigate();
+  const params = useParams()
+
+  useEffect(() => {
+    axios.get('/categories').then(res => {
+      setcategories(res.data)
+    })
+  }, [])
+
+  useEffect(() => {
+    axios.get(`http://localhost:8000/news/${params.id}?_expand=category&_expand=role`).then(res => {
+      console.log(res.data)
+      form.setFieldsValue({
+        title:res.data.title,
+        categoryId:res.data.category.id
+      })
+      setText(res.data.content)
+    })
+  },[params.id, form])
 
   //是否可执行下一步
   const next = () => {
@@ -55,41 +74,33 @@ export default function Compose() {
     setCurrent(current - 1);
   };
 
-  useEffect(() => {
-    axios.get('/categories').then(res => {
-      setcategories(res.data)
-    })
-  }, [])
-
   const handleSave = (auditState) => {
-    axios.post(`/news`, {
+    axios.patch(`/news/${params.id}`, {
       ...FormData,
       "content": Text,
-      "region": User.region ? User.region : '全球',
-      "author": User.username,
-      "roleId": User.roleId,
       "auditState": auditState,
-      "publishState": 0,
-      "createTime": Date.now(),
-      "star": 0,
-      "view": 0,
-      // "publishTime": 0
     }).then(res => {
-      navigate(auditState===0?'/home/news-manage/draft':'/home/audit-manage/list')
+      navigate(auditState === 0 ? '/home/news-manage/draft' : '/home/audit-manage/list')
       notification.info({
         message: `通知`,
         description:
-          `您可以在${auditState===0?'草稿箱':'审核列表'}中查看您的新闻`,
-        placement:"bottomRight"
-    });
+          `您可以在${auditState === 0 ? '草稿箱' : '审核列表'}中查看您的新闻`,
+        placement: "bottomRight"
+      });
     })
   }
 
   return (
     <>
-      <Breadcrumb items={[{ title: '撰写新闻' }]} className={style.title} />
+      <div>
+        <Button icon={<LeftOutlined />} style={{ border: 'none' }} onClick={() => {
+          navigate(-1)
+        }}></Button>
+        &emsp;
+        <label className={style.title}>更新新闻</label>
+      </div>
       {/* 步骤条 */}
-      <Steps current={current} items={steps} style={{marginTop:'34px'}} />
+      <Steps current={current} items={steps} style={{ marginTop: '34px' }} />
       {/* 内容区 */}
       <div className={style.content}>
         <div className={current === 0 ? '' : style.isHidden}>
@@ -140,7 +151,7 @@ export default function Compose() {
         <div className={current === 1 ? '' : style.isHidden}>
           <ComposeEdit getText={value => {
             setText(value)
-          }} />
+          }} content={Text}/>
         </div>
       </div>
 

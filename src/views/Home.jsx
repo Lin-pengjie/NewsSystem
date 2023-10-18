@@ -10,14 +10,15 @@ import {
   FileProtectOutlined,
   FolderViewOutlined
 } from '@ant-design/icons';
-import { Avatar, Layout, Menu, Button, theme, Dropdown } from 'antd';
+import { Avatar, Layout, Menu, Button, theme, Dropdown, Spin } from 'antd';
 import { useNavigate, Outlet, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
 import MenuItem from 'antd/es/menu/MenuItem';
 import SubMenu from 'antd/es/menu/SubMenu';
+import {connect} from 'react-redux'
 const { Header, Sider, Content } = Layout;
 
-const Home = () => {
+const Home = (props) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation()
@@ -53,7 +54,7 @@ const Home = () => {
 
   // 通过useLocation获取pathname进行处理返回(作为导航栏的高亮选择defaultSelectedKeys的值)
   const SelectedKey = (path) => {
-    return path === '/home' ? path : path.substring(('/home').length)
+    return path.substring(('/home').length)
   }
 
   const OpenKey = (path) => {
@@ -65,10 +66,10 @@ const Home = () => {
   } = theme.useToken();
 
   const checkpagepermisson = (list) => {
-    if (user.role.rights.hasOwnProperty("checked")){
+    if (user.role.rights.hasOwnProperty("checked")) {
       return list.pagepermisson === 1 && user.role.rights.checked.includes(list.key)
     }
-    return list.pagepermisson === 1  && user.role.rights.includes(list.key)
+    return list.pagepermisson === 1 && user.role.rights.includes(list.key)
   }
 
   const menulist = (item) => {
@@ -81,7 +82,7 @@ const Home = () => {
   }
 
   useEffect(() => {
-    axios.get('http://localhost:8000/rights?_embed=children').then(res => {
+    axios.get('/rights?_embed=children').then(res => {
       setlist(res.data)
     })
   }, [])
@@ -101,7 +102,7 @@ const Home = () => {
             defaultOpenKeys={[OpenKey(location.pathname)]}
             onSelect={(value) => {
               // 判断路径进行跳转，/home直接跳转
-              navigate(value.key === "/home" ? '/home' : `/home${value.key}`)
+              navigate(`/home${value.key}`)
             }}
           >
             {menulist(list)}
@@ -126,15 +127,16 @@ const Home = () => {
               height: 64,
             }}
           />
+          <label style={{ fontSize: '20px' }}><span style={{ color: 'red' }}>Mr. </span>Lin</label>
           <div style={{ float: 'right', padding: '0 20px' }}>
-            <span>欢迎回来，{user.username}</span>
+            <span style={{marginRight:'24px'}}>欢迎回来，<span style={{ color: '#722ed1' }}>{user.username}</span></span>
             <Dropdown
               menu={{
                 items: selectitems,
               }}
               placement="bottom"
             >
-              <Avatar size={42} icon={<UserOutlined />} />
+              <Avatar size={42} src='https://randomuser.me/api/portraits/men/71.jpg' />
             </Dropdown>
           </div>
         </Header>
@@ -151,14 +153,21 @@ const Home = () => {
             scrollbarColor: '#888 transparent',
           }}
         >
-          {/* 二级路由渲染出口 */}
-          <Outlet></Outlet>
+          <Spin spinning={props.isLoading}>
+            {/* 二级路由渲染出口 */}
+            <Outlet></Outlet>
+          </Spin>
         </Content>
       </Layout>
     </Layout>
   );
 };
-export default Home;
+
+const mapStateProps = ({LoadingReducer:{isLoading}}) => ({
+  isLoading
+})
+
+export default connect(mapStateProps)(Home);
 
 
 // import React, { useEffect, useState } from 'react';
@@ -257,7 +266,7 @@ export default Home;
 //   // }
 
 //   useEffect(() => {
-//     axios.get('http://localhost:8000/rights?_embed=children').then(res => {
+//     axios.get('/rights?_embed=children').then(res => {
 //       setlist(res.data)
 //     })
 //   }, [])

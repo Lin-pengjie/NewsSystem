@@ -14,23 +14,35 @@ export default function Limits() {
   const UpDataRef = useRef(null)
   const [isUpDisabled, setisUpDisabled] = useState(false)
   const [current, setcurrent] = useState(null)
+  const user = JSON.parse(localStorage.getItem('token'))
+
+
 
   const addbutton = () => {
     setaddopen(true)
   }
 
   useEffect(() => {
-    axios.get('http://localhost:8000/users?_expand=role').then(res => {
-      setdataSource(res.data)
+    const CHARACTERS = {
+      '1':'SuperAdministrator',
+      '2':'AreaAdministrator',
+      '3':'RegionEditing'
+    }
+
+    axios.get('/users?_expand=role').then(res => {
+      setdataSource(CHARACTERS[user.roleId] === 'SuperAdministrator' ? res.data : [
+        ...res.data.filter(item => item.username === user.username),
+        ...res.data.filter(item => item.region === user.region && CHARACTERS[item.roleId] === 'RegionEditing')
+      ])
     })
-  }, [])
+  }, [user.region, user.roleId, user.username])
   useEffect(() => {
-    axios.get('http://localhost:8000/regions').then(res => {
+    axios.get('/regions').then(res => {
       setregionList(res.data)
     })
   }, [])
   useEffect(() => {
-    axios.get('http://localhost:8000/roles').then(res => {
+    axios.get('/roles').then(res => {
       setroleList(res.data)
     })
   }, [])
@@ -98,12 +110,12 @@ export default function Limits() {
     addRef.current.validateFields().then(value => {
       setaddopen(false)
       addRef.current.resetFields()
-      axios.post(`http://localhost:8000/users`, {
+      axios.post(`/users`, {
         ...value,
         "roleState": true,
         "default": false,
       }).then(res => {
-        console.log(res)
+        // console.log(res)
         setdataSource([...dataSource, {
           ...res.data,
           role: roleList.filter(item => item.id === value.roleId)[0]
@@ -117,14 +129,14 @@ export default function Limits() {
   const islLoggeable = (item) => {
     item.roleState = !item.roleState
     setdataSource([...dataSource])
-    axios.patch(`http://localhost:8000/users/${item.id}`, {
+    axios.patch(`/users/${item.id}`, {
       roleState: item.roleState
     })
   }
 
   const isDelete = (item) => {
     setdataSource(dataSource.filter(data => data.id !== item.id))
-    axios.delete(`http://localhost:8000/users/${item.id}`)
+    axios.delete(`/users/${item.id}`)
   }
 
 
@@ -142,7 +154,7 @@ export default function Limits() {
           }
           return item
         }))
-        axios.patch(`http://localhost:8000/users/${current.id}`,value)
+        axios.patch(`/users/${current.id}`,value)
       }).catch(error => {
         console.error('表单验证失败：', error);
       })
@@ -157,11 +169,11 @@ export default function Limits() {
         onCancel={() => {
           setaddopen(false)
           addRef.current.resetFields()
-          console.log(addRef)
+          // console.log(addRef)
         }}
         onOk={() => ConfirmButton()}
       >
-        <UserForm regionList={regionList} roleList={roleList} ref={addRef} />
+        <UserForm regionList={regionList} roleList={roleList} ref={addRef} isUpData={false} />
       </Modal>
       <Table dataSource={dataSource} columns={columns} pagination={{ pageSize: 5 }} rowKey={(item) => item.id} />
       <Modal title="更新用户" open={UpDataOpen} okText='确定' cancelText='取消'
@@ -173,7 +185,7 @@ export default function Limits() {
         }}
         onOk={() => UpDataConfirm()}
       >
-        <UserForm regionList={regionList} roleList={roleList} ref={UpDataRef} isUpDisabled={isUpDisabled} />
+        <UserForm regionList={regionList} roleList={roleList} ref={UpDataRef} isUpDisabled={isUpDisabled} isUpData={true} />
       </Modal>
     </div>
   )

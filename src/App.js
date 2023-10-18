@@ -1,24 +1,67 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ConfigProvider } from 'antd';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Home from './views/Home'
 import Login from './views/Login'
 import NotFind from './views/NotFind'
-import Register from './views/Register'
+import Tourist from './views/Tourist'
 import Main from './views/subs/Main'
 import User from './views/subs/User'
 import Role from './views/subs/Role'
 import Limits from './views/subs/Limits'
 import Compose from './views/subs/Compose'
+import NewsUpdate from './views/subs/NewsUpdate'
+import NewsPreview from './views/subs/NewsPreview'
 import Drafts from './views/subs/Drafts'
 import NewsClassification from './views/subs/NewsClassification'
 import ReviewNews from './views/subs/ReviewNews'
 import AuditList from './views/subs/AuditList'
 import ToReleased from './views/subs/ToReleased'
 import HaveReleased from './views/subs/HaveReleased'
+import MouseParticles from 'react-mouse-particles'
+import BeOffline from './views/subs/BeOffline'
+import VisitorPreview from './views/VisitorPreview'
+import axios from 'axios';
+
+const LocalRouterMap = {
+  "/home": <Main />,
+  "/user-manage/list": <User />,
+  "/right-manage/role/list": <Role />,
+  "/right-manage/right/list": <Limits />,
+  "/news-manage/add": <Compose />,
+  "/news-manage/update/:id": <NewsUpdate />,
+  "/news-manage/preview/:id": <NewsPreview />,
+  "/news-manage/draft": <Drafts />,
+  "/news-manage/category": <NewsClassification />,
+  "/audit-manage/audit": <ReviewNews />,
+  "/audit-manage/list": <AuditList />,
+  "/publish-manage/unpublished": <ToReleased />,
+  "/publish-manage/published": <HaveReleased />,
+  "/publish-manage/sunset": <BeOffline />
+}
 
 
 export default function App() {
+  const [BackRouteList, setBackRouteList] = useState([])
+  const user = JSON.parse(localStorage.getItem("token"))
+
+  useEffect(() => {
+    Promise.all([
+      axios.get('/rights'),
+      axios.get('/children')
+    ]).then(res => {
+      setBackRouteList([...res[0].data, ...res[1].data])
+    })
+  }, [])
+
+  const checkRoute = (item) => {
+    return LocalRouterMap[item.key] && (item.pagepermisson || item.routepermisson)
+  }
+
+  const checkUserPermission = (item) => {
+    return user.role.rights.includes(item.key)
+    // return user.roleId !== 3 ? user.role.rights.checked.includes(item.key) : user.role.rights.includes(item.key)
+  }
 
   return (
     <ConfigProvider
@@ -35,36 +78,27 @@ export default function App() {
     >
       <BrowserRouter>
         <Routes>
-          <Route path='/' element={<Navigate to='/home'></Navigate>}></Route>
-          <Route path='*' element={<Navigate to='/404'></Navigate>}></Route>
+          <Route path='/' element={<Navigate to='/home/home'></Navigate>}></Route>
+          <Route path='/home' element={<Navigate to='/home/home'></Navigate>}></Route>
           <Route path='/home' element={<Home></Home>}>
-            <Route index element={<Main></Main>}></Route>
-            {/* 用户列表 */}
-            <Route path='user-manage/list' element={<User></User>}></Route>
-            {/* 角色列表 */}
-            <Route path='right-manage/role/list' element={<Role></Role>}></Route>
-            {/* 权限列表 */}
-            <Route path='right-manage/right/list' element={<Limits></Limits>}></Route>
-            {/* 撰写新闻 */}
-            <Route path='news-manage/add' element={<Compose></Compose>}></Route>
-            {/* 草稿箱 */}
-            <Route path='news-manage/draft' element={<Drafts></Drafts>}></Route>
-            {/* 新闻分类 */}
-            <Route path='news-manage/category' element={<NewsClassification></NewsClassification>}></Route>
-            {/* 审核新闻 */}
-            <Route path='audit-manage/audit' element={<ReviewNews></ReviewNews>}></Route>
-            {/* 审核列表 */}
-            <Route path='audit-manage/list' element={<AuditList></AuditList>}></Route>
-            {/* 待发布 */}
-            <Route path='publish-manage/unpublished' element={<ToReleased></ToReleased>}></Route>
-            {/* 已发布 */}
-            <Route path='publish-manage/published' element={<HaveReleased></HaveReleased>}></Route>
+            {
+              BackRouteList.map(item => {
+                if (checkRoute(item) && checkUserPermission(item)) {
+                  return <Route path={item.key.substring(1)} element={LocalRouterMap[item.key]} key={item.key}></Route>
+                }
+                return null
+              })
+            }
+            {
+              BackRouteList > 0 && <Route path='*' element={<NotFind></NotFind>}></Route>
+            }
           </Route>
           <Route path='/login' element={<Login></Login>}></Route>
-          <Route path='/404' element={<NotFind></NotFind>}></Route>
-          <Route path='/register' element={<Register></Register>}></Route>
+          <Route path='/tourist' element={<Tourist></Tourist>}></Route>
+          <Route path='/detail/:id' element={<VisitorPreview></VisitorPreview>}></Route>
         </Routes>
       </BrowserRouter>
+      <MouseParticles g={1} color="random" cull="col,image-wrapper" />
     </ConfigProvider>
   )
 }

@@ -1,10 +1,10 @@
 import React from 'react'
 import PublishTable from '../../components/publish-manage/PublishTable'
 
-export default function HaveReleased() {
+export default function BeOffline() {
   return (
     <div>
-      <PublishTable publishState={2} />
+      <PublishTable publishState={3} />
     </div>
   )
 }

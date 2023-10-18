@@ -30,7 +30,7 @@ export default function Limits() {
   const delLimits = (obj) => {
     if (obj.grade === 1) {
       setdataSource(dataSource.filter(data => data.id !== obj.id))
-      axios.delete(`http://localhost:8000/rights/${obj.id}`)
+      axios.delete(`/rights/${obj.id}`)
     }
     else {
       const targetItem = dataSource.find(item => item.id === obj.rightId);
@@ -39,7 +39,7 @@ export default function Limits() {
       // console.log(targetItem)
       // console.log(dataSource)
       setdataSource([...dataSource])
-      axios.delete(`http://localhost:8000/children/${obj.id}`)
+      axios.delete(`/children/${obj.id}`)
     }
   }
   //编辑按钮开关事件
@@ -48,10 +48,10 @@ export default function Limits() {
     obj.pagepermisson = obj.pagepermisson === 1 ? '' : 1
     setdataSource([...dataSource])
     if (obj.grade === 1) {
-      axios.patch(`http://localhost:8000/rights/${obj.id}`, { pagepermisson: obj.pagepermisson })
+      axios.patch(`/rights/${obj.id}`, { pagepermisson: obj.pagepermisson })
     }
     else {
-      axios.patch(`http://localhost:8000/children/${obj.id}`, { pagepermisson: obj.pagepermisson })
+      axios.patch(`/children/${obj.id}`, { pagepermisson: obj.pagepermisson })
     }
   }
 
@@ -100,7 +100,7 @@ export default function Limits() {
   ];
 
   useEffect(() => {
-    axios.get('http://localhost:8000/rights?_embed=children').then(res => {
+    axios.get('/rights?_embed=children').then(res => {
       const list = res.data
       list.forEach(element => {
         if (element.children.length === 0) {
